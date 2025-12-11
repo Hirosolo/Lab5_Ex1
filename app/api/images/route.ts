@@ -1,3 +1,5 @@
+// route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import { supabase } from "@/lib/supabase";
 import { randomUUID } from "crypto";
@@ -58,9 +60,11 @@ export async function DELETE(req: NextRequest) {
     if (existing?.url) {
       try {
         const url = new URL(existing.url);
+        // This is a rough way to extract the path. Adjust based on your actual bucket path.
+        // It assumes the URL is like: .../storage/v1/object/public/images/uploads/filename.jpg
         const path = decodeURIComponent(
           url.pathname.split("/").slice(4).join("/")
-        ); // storage/v1/object/public/<bucket>/<path>
+        ); 
         if (path) {
           await supabase.storage.from("images").remove([path]);
         }
@@ -117,10 +121,14 @@ export async function POST(req: NextRequest) {
 
     if (uploadError) throw uploadError;
 
-    // FIX: Changed misspelled 'imges' to 'images'
     const { data: publicUrl } = supabase.storage
       .from("images")
       .getPublicUrl(path);
+
+    // Add robustness check for publicUrl
+    if (!publicUrl || !publicUrl.publicUrl) {
+      throw new Error("Failed to retrieve public URL from Supabase storage.");
+    }
 
     const { data, error } = await supabase
       .from("images")
@@ -139,8 +147,9 @@ export async function POST(req: NextRequest) {
       { status: 201 }
     );
   } catch (error: any) {
+    console.error("Supabase POST Error:", error.message);
     return NextResponse.json(
-      { success: false, error: error.message },
+      { success: false, error: error.message || "An unknown error occurred during upload." },
       { status: 500 }
     );
   }

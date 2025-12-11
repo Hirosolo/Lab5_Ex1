@@ -1,11 +1,21 @@
+
 'use client';
 
 import { useState } from 'react';
+
+// Define a simple type for the image data structure
+interface ImageItem {
+  image_id: string;
+  filename: string;
+  url: string;
+  uploaded_at: string;
+}
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('users');
   const [response, setResponse] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [images, setImages] = useState<ImageItem[]>([]); // NEW STATE for images
 
   const apiCall = async (url: string, method: string = 'GET', body?: any) => {
     setLoading(true);
@@ -26,7 +36,15 @@ export default function Home() {
       } catch {
         data = await res.text(); // If fail, show raw text
       }
-  
+      
+      // NEW LOGIC: Separate handling for image list retrieval
+      if (url === '/api/images' && method === 'GET' && data.success) {
+        setImages(data.data || []);
+      } else {
+        // Clear images if we switch tabs or make a non-image API call
+        setImages([]);
+      }
+      
       setResponse({
         status: res.status,
         ok: res.ok,
@@ -73,7 +91,8 @@ export default function Home() {
             {activeTab === 'products' && <ProductsActions apiCall={apiCall} loading={loading} />}
             {activeTab === 'carts' && <CartsActions apiCall={apiCall} loading={loading} />}
             {activeTab === 'email' && <EmailActions apiCall={apiCall} loading={loading} />}
-            {activeTab === 'images' && <ImagesActions apiCall={apiCall} loading={loading} setLoading={setLoading} />}
+            {/* UPDATED: Pass images state to ImagesActions */}
+            {activeTab === 'images' && <ImagesActions apiCall={apiCall} loading={loading} setLoading={setLoading} images={images} />}
             {activeTab === 'external' && <ExternalActions apiCall={apiCall} loading={loading} />}
           </div>
 
@@ -369,7 +388,7 @@ function EmailActions({ apiCall, loading }: any) {
   );
 }
 
-function ImagesActions({ apiCall, loading, setLoading }: any) {
+function ImagesActions({ apiCall, loading, setLoading, images }: any) {
   const [file, setFile] = useState<File | null>(null);
 
   const handleUpload = async () => {
@@ -377,24 +396,34 @@ function ImagesActions({ apiCall, loading, setLoading }: any) {
     const formData = new FormData();
     formData.append('file', file);
     
-    // Change loading(true) to setLoading(true)
     setLoading(true);
     try {
       const res = await fetch('/api/images', {
         method: 'POST',
         body: formData,
       });
-      const data = await res.json();
-      apiCall('/api/images'); // Refresh list after upload
+
+      // --- DEBUGGING LOGGING REMAINS FOR 500 ERROR DIAGNOSIS ---
+      console.log(`POST Response Status: ${res.status}`);
+      const rawText = await res.text();
+      console.log('POST Raw Response Body:', rawText);
+      // --------------------------------------------------------
+      
+      if (res.ok) {
+         // Trigger GET All Images after successful upload to refresh the list
+         // This call will update the 'images' state in the Home component
+         apiCall('/api/images'); 
+      }
+      
     } catch (error) {
-      console.error(error);
+      console.error("Fetch Error:", error);
     }
-    // Change loading(false) to setLoading(false)
     setLoading(false);
   };
 
   return (
     <div className="space-y-4">
+      {/* Action Buttons */}
       <button
         onClick={() => apiCall('/api/images')}
         disabled={loading}
@@ -409,7 +438,7 @@ function ImagesActions({ apiCall, loading, setLoading }: any) {
           type="file"
           accept="image/*"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="w-full border rounded px-3 py-2 mb-2  text-black"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <button
           onClick={handleUpload}
@@ -419,6 +448,27 @@ function ImagesActions({ apiCall, loading, setLoading }: any) {
           POST Upload Image
         </button>
       </div>
+
+      {/* NEW: Image Display Area */}
+      {images.length > 0 && (
+        <div className="border-t pt-4">
+          <h3 className="font-semibold mb-4 text-black">Stored Images ({images.length})</h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {images.map((image: any) => (
+              <div key={image.image_id} className="border p-1 rounded overflow-hidden">
+                <img 
+                  src={image.url} 
+                  alt={image.filename} 
+                  className="w-full h-auto object-cover rounded" 
+                />
+                <p className="text-xs text-gray-500 truncate mt-1">{image.filename}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {/* END NEW: Image Display Area */}
+
     </div>
   );
 }
