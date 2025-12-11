@@ -1,65 +1,437 @@
-import Image from "next/image";
+'use client';
+
+import { useState } from 'react';
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState('users');
+  const [response, setResponse] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+
+  const apiCall = async (url: string, method: string = 'GET', body?: any) => {
+    setLoading(true);
+    try {
+      const options: RequestInit = {
+        method,
+        headers: body ? { 'Content-Type': 'application/json' } : {},
+      };
+      if (body && method !== 'GET') {
+        options.body = JSON.stringify(body);
+      }
+      const res = await fetch(url, options);
+      const data = await res.json();
+      setResponse(data);
+    } catch (error: any) {
+      setResponse({ error: error.message });
+    }
+    setLoading(false);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
+    <div className="min-h-screen bg-gray-50 p-8">
+      <div className="max-w-7xl mx-auto">
+        <h1 className="text-4xl font-bold mb-2 text-gray-800">Lab5_Ex1 API Test Client</h1>
+        <p className="text-gray-600 mb-8">Next.js + Supabase (PostgreSQL)</p>
+
+        {/* Tabs */}
+        <div className="flex flex-wrap gap-2 mb-6 border-b">
+          {['users', 'products', 'carts', 'email', 'images', 'external'].map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-3 font-medium capitalize transition ${
+                activeTab === tab
+                  ? 'border-b-2 border-blue-500 text-blue-600'
+                  : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              {tab === 'carts' ? 'Shopping Carts' : tab === 'external' ? 'External Users' : tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left: Actions */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold mb-4 capitalize">{activeTab} Actions</h2>
+            
+            {activeTab === 'users' && <UsersActions apiCall={apiCall} loading={loading} />}
+            {activeTab === 'products' && <ProductsActions apiCall={apiCall} loading={loading} />}
+            {activeTab === 'carts' && <CartsActions apiCall={apiCall} loading={loading} />}
+            {activeTab === 'email' && <EmailActions apiCall={apiCall} loading={loading} />}
+            {activeTab === 'images' && <ImagesActions apiCall={apiCall} loading={loading} />}
+            {activeTab === 'external' && <ExternalActions apiCall={apiCall} loading={loading} />}
+          </div>
+
+          {/* Right: Response */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h2 className="text-2xl font-semibold mb-4">Response</h2>
+            {loading ? (
+              <div className="flex items-center justify-center h-64">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+              </div>
+            ) : (
+              <pre className="bg-gray-900 text-green-400 p-4 rounded overflow-auto max-h-[600px] text-sm">
+                {response ? JSON.stringify(response, null, 2) : 'No response yet'}
+              </pre>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UsersActions({ apiCall, loading }: any) {
+  const [formData, setFormData] = useState({ full_name: '', address: '', user_id: '' });
+
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => apiCall('/api/users')}
+        disabled={loading}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        GET All Users
+      </button>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Create User</h3>
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={formData.full_name}
+          onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+        <input
+          type="text"
+          placeholder="Address"
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
+        />
+        <button
+          onClick={() => apiCall('/api/users', 'POST', { full_name: formData.full_name, address: formData.address })}
+          disabled={loading}
+          className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+        >
+          POST Create User
+        </button>
+      </div>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Update/Delete User</h3>
+        <input
+          type="text"
+          placeholder="User ID"
+          value={formData.user_id}
+          onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => apiCall(`/api/users/${formData.user_id}`, 'PUT', { full_name: formData.full_name, address: formData.address })}
+            disabled={loading || !formData.user_id}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            PUT Update
+          </button>
+          <button
+            onClick={() => apiCall(`/api/users/${formData.user_id}`, 'DELETE')}
+            disabled={loading || !formData.user_id}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
           >
-            Documentation
-          </a>
+            DELETE
+          </button>
         </div>
-      </main>
+      </div>
+    </div>
+  );
+}
+
+function ProductsActions({ apiCall, loading }: any) {
+  const [formData, setFormData] = useState({ product_name: '', price: '', manufacturing_date: '', product_id: '' });
+
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => apiCall('/api/products')}
+        disabled={loading}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        GET All Products
+      </button>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Create Product</h3>
+        <input
+          type="text"
+          placeholder="Product Name"
+          value={formData.product_name}
+          onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <input
+          type="number"
+          placeholder="Price"
+          value={formData.price}
+          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <input
+          type="date"
+          placeholder="Manufacturing Date"
+          value={formData.manufacturing_date}
+          onChange={(e) => setFormData({ ...formData, manufacturing_date: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <button
+          onClick={() => apiCall('/api/products', 'POST', {
+            product_name: formData.product_name,
+            price: parseFloat(formData.price),
+            manufacturing_date: formData.manufacturing_date
+          })}
+          disabled={loading}
+          className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+        >
+          POST Create Product
+        </button>
+      </div>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Update/Delete Product</h3>
+        <input
+          type="text"
+          placeholder="Product ID"
+          value={formData.product_id}
+          onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => apiCall(`/api/products/${formData.product_id}`, 'PUT', {
+              product_name: formData.product_name,
+              price: parseFloat(formData.price)
+            })}
+            disabled={loading || !formData.product_id}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
+          >
+            PUT Update
+          </button>
+          <button
+            onClick={() => apiCall(`/api/products/${formData.product_id}`, 'DELETE')}
+            disabled={loading || !formData.product_id}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
+          >
+            DELETE
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CartsActions({ apiCall, loading }: any) {
+  const [formData, setFormData] = useState({ user_id: '', product_id: '', quantity: '1', cart_id: '' });
+
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => apiCall('/api/shopping-carts')}
+        disabled={loading}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        GET All Shopping Carts
+      </button>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Add to Cart</h3>
+        <input
+          type="text"
+          placeholder="User ID"
+          value={formData.user_id}
+          onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <input
+          type="text"
+          placeholder="Product ID"
+          value={formData.product_id}
+          onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <input
+          type="number"
+          placeholder="Quantity"
+          value={formData.quantity}
+          onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <button
+          onClick={() => apiCall('/api/shopping-carts', 'POST', {
+            user_id: formData.user_id,
+            product_id: formData.product_id,
+            quantity: parseInt(formData.quantity)
+          })}
+          disabled={loading}
+          className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+        >
+          POST Add to Cart
+        </button>
+      </div>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Update/Delete Cart Item</h3>
+        <input
+          type="text"
+          placeholder="Cart ID"
+          value={formData.cart_id}
+          onChange={(e) => setFormData({ ...formData, cart_id: e.target.value })}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => apiCall(`/api/shopping-carts/${formData.cart_id}`, 'PUT', {
+              quantity: parseInt(formData.quantity)
+            })}
+            disabled={loading || !formData.cart_id}
+            className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
+          >
+            PUT Update
+          </button>
+          <button
+            onClick={() => apiCall(`/api/shopping-carts/${formData.cart_id}`, 'DELETE')}
+            disabled={loading || !formData.cart_id}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
+          >
+            DELETE
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmailActions({ apiCall, loading }: any) {
+  const [formData, setFormData] = useState({ email: '', subject: '', message: '' });
+
+  return (
+    <div className="space-y-4">
+      <h3 className="font-semibold">Send Email</h3>
+      <input
+        type="email"
+        placeholder="Recipient Email"
+        value={formData.email}
+        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+        className="w-full border rounded px-3 py-2"
+      />
+      <input
+        type="text"
+        placeholder="Subject"
+        value={formData.subject}
+        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
+        className="w-full border rounded px-3 py-2"
+      />
+      <textarea
+        placeholder="Message"
+        value={formData.message}
+        onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+        className="w-full border rounded px-3 py-2 h-32"
+      />
+      <button
+        onClick={() => apiCall('/api/send-email', 'POST', formData)}
+        disabled={loading}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        POST Send Email
+      </button>
+    </div>
+  );
+}
+
+function ImagesActions({ apiCall, loading }: any) {
+  const [file, setFile] = useState<File | null>(null);
+
+  const handleUpload = async () => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    loading(true);
+    try {
+      const res = await fetch('/api/images/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      apiCall('/api/images'); // Refresh list after upload
+    } catch (error) {
+      console.error(error);
+    }
+    loading(false);
+  };
+
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => apiCall('/api/images')}
+        disabled={loading}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        GET All Images
+      </button>
+
+      <div className="border-t pt-4">
+        <h3 className="font-semibold mb-2">Upload Image</h3>
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full border rounded px-3 py-2 mb-2"
+        />
+        <button
+          onClick={handleUpload}
+          disabled={loading || !file}
+          className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+        >
+          POST Upload Image
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function ExternalActions({ apiCall, loading }: any) {
+  return (
+    <div className="space-y-4">
+      <button
+        onClick={() => apiCall('/api/fetch-external-users')}
+        disabled={loading}
+        className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
+      >
+        GET Saved External Users
+      </button>
+
+      <button
+        onClick={() => apiCall('/api/fetch-external-users', 'POST')}
+        disabled={loading}
+        className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+      >
+        POST Fetch & Save from JSONPlaceholder
+      </button>
+
+      <button
+        onClick={() => apiCall('/api/fetch-external-users', 'DELETE')}
+        disabled={loading}
+        className="w-full bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
+      >
+        DELETE All External Users
+      </button>
+
+      <div className="border-t pt-4 text-sm text-gray-600">
+        <p>Source: https://jsonplaceholder.typicode.com/users</p>
+      </div>
     </div>
   );
 }

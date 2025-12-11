@@ -8,5 +8,5 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 // For server-side operations
 export const supabaseAdmin = createClient(
   supabaseUrl,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  supabaseKey!
 )
