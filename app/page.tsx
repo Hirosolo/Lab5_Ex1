@@ -12,19 +12,33 @@ export default function Home() {
     try {
       const options: RequestInit = {
         method,
-        headers: body ? { 'Content-Type': 'application/json' } : {},
+        headers: body ? { 'Content-Type': 'application/json' } : {}
       };
       if (body && method !== 'GET') {
         options.body = JSON.stringify(body);
       }
+  
       const res = await fetch(url, options);
-      const data = await res.json();
-      setResponse(data);
+  
+      let data;
+      try {
+        data = await res.json(); // Try JSON first
+      } catch {
+        data = await res.text(); // If fail, show raw text
+      }
+  
+      setResponse({
+        status: res.status,
+        ok: res.ok,
+        body: data
+      });
+  
     } catch (error: any) {
       setResponse({ error: error.message });
     }
     setLoading(false);
   };
+  
 
   return (
     <div className="min-h-screen bg-gray-50 p-8">
@@ -53,7 +67,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Actions */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold mb-4 capitalize">{activeTab} Actions</h2>
+            <h2 className="text-2xl font-semibold mb-4 capitalize text-black">{activeTab} Actions</h2>
             
             {activeTab === 'users' && <UsersActions apiCall={apiCall} loading={loading} />}
             {activeTab === 'products' && <ProductsActions apiCall={apiCall} loading={loading} />}
@@ -65,7 +79,7 @@ export default function Home() {
 
           {/* Right: Response */}
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-semibold mb-4">Response</h2>
+            <h2 className="text-2xl font-semibold mb-4 text-black">Response</h2>
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -96,7 +110,7 @@ function UsersActions({ apiCall, loading }: any) {
       </button>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Create User</h3>
+        <h3 className="font-semibold mb-2 text-black">Create User</h3>
         <input
           type="text"
           placeholder="Full Name"
@@ -121,24 +135,29 @@ function UsersActions({ apiCall, loading }: any) {
       </div>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Update/Delete User</h3>
+        <h3 className="font-semibold mb-2 text-black">Update/Delete User</h3>
         <input
           type="text"
           placeholder="User ID"
           value={formData.user_id}
           onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <div className="grid grid-cols-2 gap-2">
           <button
-            onClick={() => apiCall(`/api/users/${formData.user_id}`, 'PUT', { full_name: formData.full_name, address: formData.address })}
+            onClick={() =>
+              apiCall(`/api/users?id=${formData.user_id}`, 'PUT', {
+                full_name: formData.full_name,
+                address: formData.address
+              })
+            }
             disabled={loading || !formData.user_id}
             className="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600 disabled:opacity-50"
           >
             PUT Update
           </button>
           <button
-            onClick={() => apiCall(`/api/users/${formData.user_id}`, 'DELETE')}
+            onClick={() => apiCall(`/api/users?id=${formData.user_id}`, 'DELETE')}
             disabled={loading || !formData.user_id}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
           >
@@ -156,7 +175,7 @@ function ProductsActions({ apiCall, loading }: any) {
   return (
     <div className="space-y-4">
       <button
-        onClick={() => apiCall('/api/products')}
+        onClick={() => apiCall('/api/products','GET')}
         disabled={loading}
         className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
       >
@@ -164,49 +183,49 @@ function ProductsActions({ apiCall, loading }: any) {
       </button>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Create Product</h3>
+        <h3 className="font-semibold mb-2 text-black">Create Product</h3>
         <input
           type="text"
           placeholder="Product Name"
           value={formData.product_name}
           onChange={(e) => setFormData({ ...formData, product_name: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <input
           type="number"
           placeholder="Price"
           value={formData.price}
           onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <input
           type="date"
           placeholder="Manufacturing Date"
           value={formData.manufacturing_date}
           onChange={(e) => setFormData({ ...formData, manufacturing_date: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <button
           onClick={() => apiCall('/api/products', 'POST', {
             product_name: formData.product_name,
-            price: parseFloat(formData.price),
+            price: formData.price,
             manufacturing_date: formData.manufacturing_date
           })}
           disabled={loading}
-          className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+          className="w-full bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50 "
         >
           POST Create Product
         </button>
       </div>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Update/Delete Product</h3>
+        <h3 className="font-semibold mb-2 text-black">Update/Delete Product</h3>
         <input
           type="text"
           placeholder="Product ID"
           value={formData.product_id}
           onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <div className="grid grid-cols-2 gap-2">
           <button
@@ -220,7 +239,7 @@ function ProductsActions({ apiCall, loading }: any) {
             PUT Update
           </button>
           <button
-            onClick={() => apiCall(`/api/products/${formData.product_id}`, 'DELETE')}
+            onClick={() => apiCall(`/api/products?id=${formData.product_id}`, 'DELETE')}
             disabled={loading || !formData.product_id}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
           >
@@ -246,27 +265,27 @@ function CartsActions({ apiCall, loading }: any) {
       </button>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Add to Cart</h3>
+        <h3 className="font-semibold mb-2 text-black">Add to Cart</h3>
         <input
           type="text"
           placeholder="User ID"
           value={formData.user_id}
           onChange={(e) => setFormData({ ...formData, user_id: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <input
           type="text"
           placeholder="Product ID"
           value={formData.product_id}
           onChange={(e) => setFormData({ ...formData, product_id: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <input
           type="number"
           placeholder="Quantity"
           value={formData.quantity}
           onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <button
           onClick={() => apiCall('/api/shopping-carts', 'POST', {
@@ -282,13 +301,13 @@ function CartsActions({ apiCall, loading }: any) {
       </div>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Update/Delete Cart Item</h3>
+        <h3 className="font-semibold mb-2 text-black">Update/Delete Cart Item</h3>
         <input
           type="text"
           placeholder="Cart ID"
           value={formData.cart_id}
           onChange={(e) => setFormData({ ...formData, cart_id: e.target.value })}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2 text-black"
         />
         <div className="grid grid-cols-2 gap-2">
           <button
