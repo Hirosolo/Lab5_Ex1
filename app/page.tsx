@@ -73,7 +73,7 @@ export default function Home() {
             {activeTab === 'products' && <ProductsActions apiCall={apiCall} loading={loading} />}
             {activeTab === 'carts' && <CartsActions apiCall={apiCall} loading={loading} />}
             {activeTab === 'email' && <EmailActions apiCall={apiCall} loading={loading} />}
-            {activeTab === 'images' && <ImagesActions apiCall={apiCall} loading={loading} />}
+            {activeTab === 'images' && <ImagesActions apiCall={apiCall} loading={loading} setLoading={setLoading} />}
             {activeTab === 'external' && <ExternalActions apiCall={apiCall} loading={loading} />}
           </div>
 
@@ -337,26 +337,26 @@ function EmailActions({ apiCall, loading }: any) {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold">Send Email</h3>
+      <h3 className="font-semibold text-black">Send Email</h3>
       <input
         type="email"
         placeholder="Recipient Email"
         value={formData.email}
         onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-        className="w-full border rounded px-3 py-2"
+        className="w-full border rounded px-3 py-2 text-black"
       />
       <input
         type="text"
         placeholder="Subject"
         value={formData.subject}
-        onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-        className="w-full border rounded px-3 py-2"
+        onChange={(e) => setFormData({ ...formData , subject: e.target.value })}
+        className="w-full border rounded px-3 py-2 text-black"
       />
       <textarea
         placeholder="Message"
         value={formData.message}
         onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-        className="w-full border rounded px-3 py-2 h-32"
+        className="w-full border rounded px-3 py-2 h-32 text-black"
       />
       <button
         onClick={() => apiCall('/api/send-email', 'POST', formData)}
@@ -369,7 +369,7 @@ function EmailActions({ apiCall, loading }: any) {
   );
 }
 
-function ImagesActions({ apiCall, loading }: any) {
+function ImagesActions({ apiCall, loading, setLoading }: any) {
   const [file, setFile] = useState<File | null>(null);
 
   const handleUpload = async () => {
@@ -377,9 +377,10 @@ function ImagesActions({ apiCall, loading }: any) {
     const formData = new FormData();
     formData.append('file', file);
     
-    loading(true);
+    // Change loading(true) to setLoading(true)
+    setLoading(true);
     try {
-      const res = await fetch('/api/images/upload', {
+      const res = await fetch('/api/images', {
         method: 'POST',
         body: formData,
       });
@@ -388,7 +389,8 @@ function ImagesActions({ apiCall, loading }: any) {
     } catch (error) {
       console.error(error);
     }
-    loading(false);
+    // Change loading(false) to setLoading(false)
+    setLoading(false);
   };
 
   return (
@@ -402,12 +404,12 @@ function ImagesActions({ apiCall, loading }: any) {
       </button>
 
       <div className="border-t pt-4">
-        <h3 className="font-semibold mb-2">Upload Image</h3>
+        <h3 className="font-semibold mb-2 text-black">Upload Image</h3>
         <input
           type="file"
           accept="image/*"
           onChange={(e) => setFile(e.target.files?.[0] || null)}
-          className="w-full border rounded px-3 py-2 mb-2"
+          className="w-full border rounded px-3 py-2 mb-2  text-black"
         />
         <button
           onClick={handleUpload}
