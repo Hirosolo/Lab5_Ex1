@@ -353,7 +353,6 @@ function CartsActions({ apiCall, loading }: any) {
 
 function EmailActions({ apiCall, loading }: any) {
   const [formData, setFormData] = useState({ email: '', subject: '', message: '' });
-
   return (
     <div className="space-y-4">
       <h3 className="font-semibold text-black">Send Email</h3>
