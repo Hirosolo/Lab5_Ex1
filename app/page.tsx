@@ -320,7 +320,7 @@ function CartsActions({ apiCall, loading }: any) {
             PUT Update
           </button>
           <button
-            onClick={() => apiCall(`/api/shopping-carts/${formData.cart_id}`, 'DELETE')}
+            onClick={() => apiCall(`/api/shopping-carts?id=${formData.cart_id}`, 'DELETE')}
             disabled={loading || !formData.cart_id}
             className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 disabled:opacity-50"
           >
